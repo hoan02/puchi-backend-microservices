@@ -1,0 +1,9 @@
+[submodule "puchi-auth-service"]
+	path = puchi-auth-service
+	url = https://github.com/hoan02/puchi-auth-service.git
+[submodule "puchi-user-service"]
+	path = puchi-user-service
+	url = https://github.com/hoan02/puchi-user-service.git
+[submodule "puchi-gateway"]
+	path = puchi-gateway
+	url = https://github.com/hoan02/puchi-gateway.git
