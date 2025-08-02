@@ -47,7 +47,7 @@ graph TB
     end
 
     subgraph "Gateway Layer"
-        APISIX[🚪 APISIX Gateway]
+        APISIX[🚪 APISIX Gateway<br/>+ Auth Plugin]
         GoRunner[🔧 Go Plugin Runner]
         etcd[🗄️ etcd Config Store]
     end
@@ -55,6 +55,8 @@ graph TB
     subgraph "Microservices"
         AuthService[🔐 Auth Service<br/>Port 8001]
         UserService[👤 User Service<br/>Port 8002]
+        FutureService1[🔮 Future Service 1<br/>Port 8003]
+        FutureService2[🔮 Future Service 2<br/>Port 8004]
     end
 
     subgraph "Infrastructure"
@@ -73,21 +75,32 @@ graph TB
 
     Client --> Cloudflare
     Cloudflare --> APISIX
-    APISIX --> GoRunner
+
+    %% Clerk OIDC tương tác 2 chiều với APISIX
+    APISIX <--> Clerk
+
+    %% APISIX route đến các services
     APISIX --> AuthService
     APISIX --> UserService
+    APISIX --> FutureService1
+    APISIX --> FutureService2
 
+    %% Services tương tác với infrastructure
     AuthService --> PostgreSQL
     UserService --> PostgreSQL
+    FutureService1 --> PostgreSQL
+    FutureService2 --> PostgreSQL
+
     AuthService --> RabbitMQ
     UserService --> RabbitMQ
+    FutureService1 --> RabbitMQ
+    FutureService2 --> RabbitMQ
 
+    %% Monitoring
     APISIX --> Prometheus
     Prometheus --> Grafana
 
-    AuthService --> Clerk
-    UserService --> Clerk
-
+    %% Configuration
     APISIX --> etcd
 ```
 
@@ -98,13 +111,23 @@ graph TB
 │   Client    │───▶│   APISIX    │───▶│  Micro-     │
 │   (Frontend)│    │   Gateway   │    │  services   │
 └─────────────┘    │   + Auth    │    │             │
-                   │   Check     │    └─────────────┘
+                   │   Plugin    │    └─────────────┘
                    └─────────────┘
-                          │
+                          ↕
                    ┌─────────────┐
                    │   Clerk     │
                    │   OIDC      │
                    └─────────────┘
+```
+
+### Authentication Flow
+
+```
+1. Client Request → APISIX Gateway
+2. APISIX Auth Plugin → Clerk OIDC (validate token)
+3. Clerk OIDC → APISIX (return validation result)
+4. APISIX → Microservice (if auth successful)
+5. Microservice → Client (response)
 ```
 
 ## 🛠️ Technologies
@@ -167,6 +190,14 @@ graph TB
 - **Prometheus**: Metrics collection
 - **Grafana**: Monitoring dashboards
 
+**Key Features**:
+
+- **Centralized Authentication**: Clerk OIDC integration via Go plugins
+- **Dynamic Routing**: Support for multiple microservices
+- **Rate Limiting**: Built-in protection against abuse
+- **Load Balancing**: Distribute traffic across service instances
+- **Monitoring**: Real-time metrics and health checks
+
 **Ports**:
 
 - `9080`: APISIX API
@@ -182,10 +213,10 @@ graph TB
 
 **Features**:
 
-- OpenID Connect integration with Clerk
-- JWT token management
-- User session handling
-- Permission management
+- User session management
+- Permission and role management
+- Token refresh handling
+- Audit logging
 
 **Ports**:
 
@@ -209,6 +240,21 @@ graph TB
 - `8002`: HTTP API
 - `9002`: gRPC
 - `5672`: AMQP (RabbitMQ)
+
+### 4. **Future Services** (Planned)
+
+**Scalable Architecture**: The system is designed to easily accommodate additional services:
+
+- **Learning Service**: Course management, lessons, exercises
+- **Progress Service**: Learning analytics and achievements
+- **Notification Service**: Real-time notifications and alerts
+- **Payment Service**: Subscription and billing management
+- **Content Service**: Media and learning materials
+
+**Port Allocation**:
+
+- `8003-8099`: Reserved for future microservices
+- `9003-9099`: Reserved for gRPC services
 
 ## 🚀 Quick Start
 
